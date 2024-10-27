@@ -8,10 +8,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var message string
-
 type requestBody struct {
-	Message string `json:"message"`
+	Text string `json:"message"`
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,24 +25,40 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message = body.Message
+	newMessage := Message{Text: body.Text}
+	DB.Create(&newMessage)
+
+	// message = body.Message
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Message received: %s", message)
+	fmt.Fprintf(w, "Message received: %s", body.Text)
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
-	if message == "" {
+	var messages []Message
+	DB.Find(&messages)
+
+	if len(messages) == 0 {
 		http.Error(w, "No message available", http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Hello, %s", message)
+	json.NewEncoder(w).Encode(messages)
+	// fmt.Fprintf(w, "Hello, %s", message)
 }
 
 func main() {
+	// Вызываем метод InitDB() из файла db.go
+	InitDB()
+
+	// Автоматическая миграция модели Message
+	DB.AutoMigrate(&Message{})
+
+	// Создаем новый маршрутизатор
 	router := mux.NewRouter()
 	router.HandleFunc("/api/post", postHandler).Methods("POST")
 	router.HandleFunc("/api/get", getHandler).Methods("GET")
+
+	// Запускаем сервер на порту 8080
 	http.ListenAndServe(":8080", router)
 }
