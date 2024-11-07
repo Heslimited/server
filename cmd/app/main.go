@@ -1,12 +1,14 @@
 package main
 
 import (
-	"net/http"
+	"log"
 	"project/internal/database"
 	"project/internal/handlers"
 	"project/internal/taskService"
+	"project/internal/web/tasks"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -18,11 +20,18 @@ func main() {
 
 	handler := handlers.NewHandler(service)
 
-	router := mux.NewRouter()
-	router.HandleFunc("/api/get", handler.GetTasksHandler).Methods("GET")
-	router.HandleFunc("/api/post", handler.PostTaskHandler).Methods("POST")
-	router.HandleFunc("/api/patch/{id}", handler.PatchTaskHandler).Methods("PATCH")
-	router.HandleFunc("/api/delete/{id}", handler.DeleteTaskHandler).Methods("DELETE")
+	// Инициализируем echo
+	e := echo.New()
 
-	http.ListenAndServe(":8080", router)
+	// используем Logger и Recover
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Прикол для работы в echo. Передаем и регистрируем хендлер в echo
+	strictHandler := tasks.NewStrictHandler(handler, nil) // тут будет ошибка
+	tasks.RegisterHandlers(e, strictHandler)
+
+	if err := e.Start(":8080"); err != nil {
+		log.Fatalf("failed to start with err: %v", err)
+	}
 }

@@ -6,7 +6,7 @@ import (
 
 type Task struct {
 	gorm.Model
-	Task   string `gorm:"column:task" json:"task"`
+	Text   string `gorm:"column:text" json:"text"`
 	IsDone bool   `gorm:"column:is_done" json:"is_done"`
 }
 
