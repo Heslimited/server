@@ -1,16 +1,20 @@
 package taskService
 
-import "gorm.io/gorm"
+import (
+	"project/internal/models"
+
+	"gorm.io/gorm"
+)
 
 type TaskRepository interface {
 	// CreateTask - Передаем в функцию task типа Task из orm.go
 	// возвращаем созданный Task и ошибку
-	CreateTask(task Task) (Task, error)
+	CreateTask(task models.Task) (models.Task, error)
 	// GetAllTasks - Возвращаем массив из всех задач в БД и ошибку
-	GetAllTasks() ([]Task, error)
+	GetAllTasks() ([]models.Task, error)
 	// UpdateTaskByID - Передаем id и Task, возвращаем обновленный Task
 	// и ошибку
-	UpdateTaskByID(id uint, task Task) (Task, error)
+	UpdateTaskByID(id uint, task models.Task) (models.Task, error)
 	// DeleteTaskByID - Передаем id для удаления, возвращаем только ошибку
 	DeleteTaskByID(id uint) error
 }
@@ -24,25 +28,25 @@ func NewTaskRepository(db *gorm.DB) *taskRepository {
 }
 
 // (r *taskRepository) привязывает данную функцию к нашему репозиторию
-func (r *taskRepository) CreateTask(task Task) (Task, error) {
+func (r *taskRepository) CreateTask(task models.Task) (models.Task, error) {
 	result := r.db.Create(&task)
 	if result.Error != nil {
-		return Task{}, result.Error
+		return models.Task{}, result.Error
 	}
 	return task, nil
 }
 
-func (r *taskRepository) GetAllTasks() ([]Task, error) {
-	var tasks []Task
+func (r *taskRepository) GetAllTasks() ([]models.Task, error) {
+	var tasks []models.Task
 	err := r.db.Find(&tasks).Error
 	return tasks, err
 }
 
-func (r *taskRepository) UpdateTaskByID(id uint, task Task) (Task, error) {
+func (r *taskRepository) UpdateTaskByID(id uint, task models.Task) (models.Task, error) {
 	err := r.db.Model(&task).Where("id = ?", id).Updates(task).Error
 	return task, err
 }
 
 func (r *taskRepository) DeleteTaskByID(id uint) error {
-	return r.db.Delete(&Task{}, id).Error
+	return r.db.Delete(&models.Task{}, id).Error
 }

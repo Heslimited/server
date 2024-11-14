@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"project/internal/models"
 	"project/internal/userService" // Убедитесь, что путь к пакету правильный
 	"project/internal/web/users"
 )
@@ -37,9 +38,29 @@ func (h *UserHandler) GetUsers(ctx context.Context, request users.GetUsersReques
 	return response, nil
 }
 
+func (h *UserHandler) GetTasksByUserID(ctx context.Context, request users.GetTasksByUserIDRequestObject) (users.GetTasksByUserIDResponseObject, error) {
+	userID := uint(request.Id)
+	allTasks, err := h.Service.GetTasksForUser(userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := users.GetTasksByUserID200JSONResponse{}
+	for _, tsk := range allTasks {
+		task := users.Task{
+			Id:     &tsk.ID,
+			Task:   &tsk.Text,
+			IsDone: &tsk.IsDone,
+		}
+		response = append(response, task)
+	}
+	return response, nil
+}
+
 func (h *UserHandler) PostUsers(ctx context.Context, request users.PostUsersRequestObject) (users.PostUsersResponseObject, error) {
 	userRequest := request.Body
-	userToCreate := userService.User{
+	userToCreate := models.User{
 		Email:    *userRequest.Email,
 		Password: *userRequest.Password,
 	}
@@ -60,7 +81,7 @@ func (h *UserHandler) PatchUsersId(ctx context.Context, request users.PatchUsers
 	userID := uint(request.Id)
 	userRequest := request.Body
 
-	userToUpdate := userService.User{
+	userToUpdate := models.User{
 		Email:    *userRequest.Email,
 		Password: *userRequest.Password,
 	}

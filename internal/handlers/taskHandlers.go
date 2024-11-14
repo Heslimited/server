@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"project/internal/models"
 	"project/internal/taskService" // Убедитесь, что путь к пакету правильный
 	"project/internal/web/tasks"
 )
@@ -18,8 +19,6 @@ func NewTaskHandler(service *taskService.TaskService) *TaskHandler {
 }
 
 // Реализация методов интерфейса StrictServerInterface
-
-// GetTasks implements tasks.StrictServerInterface.
 func (h *TaskHandler) GetTasks(ctx context.Context, request tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
 	allTasks, err := h.Service.GetAllTasks()
 	if err != nil {
@@ -33,6 +32,12 @@ func (h *TaskHandler) GetTasks(ctx context.Context, request tasks.GetTasksReques
 			Task:   &tsk.Text,
 			IsDone: &tsk.IsDone,
 		}
+
+		// Добавляем UserId в ответ только если он существует
+		if tsk.UserId != nil {
+			task.UserId = tsk.UserId
+		}
+
 		response = append(response, task)
 	}
 	return response, nil
@@ -41,10 +46,17 @@ func (h *TaskHandler) GetTasks(ctx context.Context, request tasks.GetTasksReques
 // PostTasks implements tasks.StrictServerInterface.
 func (h *TaskHandler) PostTasks(ctx context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
 	taskRequest := request.Body
-	taskToCreate := taskService.Task{
+
+	taskToCreate := models.Task{
 		Text:   *taskRequest.Task,
 		IsDone: *taskRequest.IsDone,
 	}
+
+	// Записать UserId, если он существует в запросе
+	if taskRequest.UserId != nil {
+		taskToCreate.UserId = taskRequest.UserId
+	}
+
 	createdTask, err := h.Service.CreateTask(taskToCreate)
 	if err != nil {
 		return nil, err
@@ -55,13 +67,20 @@ func (h *TaskHandler) PostTasks(ctx context.Context, request tasks.PostTasksRequ
 		Task:   &createdTask.Text,
 		IsDone: &createdTask.IsDone,
 	}
+
+	// Добавляем UserId в ответ, только если он существует
+	if createdTask.UserId != nil {
+		response.UserId = createdTask.UserId
+	}
+
 	return response, nil
 }
 
 func (h *TaskHandler) PatchTasksId(ctx context.Context, request tasks.PatchTasksIdRequestObject) (tasks.PatchTasksIdResponseObject, error) {
 	taskID := uint(request.Id)
 	taskRequest := request.Body
-	taskToUpdate := taskService.Task{
+
+	taskToUpdate := models.Task{
 		Text:   *taskRequest.Task,
 		IsDone: *taskRequest.IsDone,
 	}
